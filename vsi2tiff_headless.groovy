@@ -5,7 +5,7 @@ import qupath.lib.projects.ProjectIO
 import qupath.lib.images.writers.ome.OMETiffWriter
 import qupath.lib.images.writers.ome.OMEPyramidWriter
 
-// Convert VSI image to OME-TIFF format (pyramid, JPEG pending)
+// Convert VSI image to OME-TIFF pyramid
 //
 // Arguments:
 //  - param1: input VSI image path
@@ -19,6 +19,7 @@ String makeOutputFilename(String inputPath) {
 }
 
 def writeOmeTiff(ImageServer server, String outputPath) {
+    // single JPEG plane not currently used
     try {
         def writer = new OMETiffWriter()
         println "Writing OME-TIFF to: ${outputPath}"
@@ -32,8 +33,6 @@ def writeOmeTiff(ImageServer server, String outputPath) {
 def writeOmePyramid(ImageServer server, String outputPath) {
     // Configuration for OME Pyramid TIFF
     def tileSize = 512
-    def minDownsample = 1
-    def pyramidScale = 2
     def nThreads = 2
     def compression = OMEPyramidWriter.CompressionType.LZW  // Use LZW. Also  //ZLIB //UNCOMPRESSED (not working with 32bit: //J2K_LOSSY //J2K)
 
@@ -43,9 +42,8 @@ def writeOmePyramid(ImageServer server, String outputPath) {
             .parallelize(nThreads)
             .channelsInterleaved()
             .tileSize(tileSize)
-            .scaledDownsampling(minDownsample, pyramidScale)
+            .downsamples(1.0, 2.0, 4.0, 8.0)
             .build()
-        
         writer.writePyramid(outputPath)
         println "OME Pyramid TIFF written to: ${outputPath}"
     } catch (Exception e) {

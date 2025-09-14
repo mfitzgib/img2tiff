@@ -12,9 +12,9 @@ Arguments:
 
 The H&amp;E images we work with have at least four series:
 
-0 - Slide Label
-1 - Medium resolution overview
-2 - Full resolution (e.g. 40X brightfield)
+0. Slide Label
+1. Medium resolution overview
+2. Full resolution (e.g. 40X brightfield)
 
 The full resolution image seems to take around 10 minutes to
 convert an image on 2 cores of an M1 Apple Silicon MacBook Pro.
