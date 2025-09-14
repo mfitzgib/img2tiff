@@ -5,51 +5,92 @@ import qupath.lib.projects.ProjectIO
 import qupath.lib.images.writers.ome.OMETiffWriter
 import qupath.lib.images.writers.ome.OMEPyramidWriter
 
-String make_output_filename(String inputPath) {
+// Converts VSI image to OME-TIFF format (pyramid, JPEG pending)
+// Arguments:
+//  - param1: input VSI image path
+//  - param2: series number (optional, defaults to 0)
+
+String makeOutputFilename(String inputPath) {
     if (!inputPath.endsWith('.vsi')) {
-	throw new IllegalArgumentException("Input must be a VSI image with .vsi suffix (received ${inputPath})")
+        throw new IllegalArgumentException("Input must be a VSI image with .vsi suffix (received ${inputPath})")
     }
     return inputPath.replaceFirst(/\.vsi$/, '.ome.tif')
 }
 
-def write_ome_jpeg(server, outputPath) {
-    def writer = new OMETiffWriter()
-    println('Writing OME-TIFF ' + outputPath)
-    writer.writeImage(server, outputPath)
-    println('Done:' + outputPath)
+def writeOmeTiff(ImageServer server, String outputPath) {
+    try {
+        def writer = new OMETiffWriter()
+        println "Writing OME-TIFF to: ${outputPath}"
+        writer.writeImage(server, outputPath)
+        println "Write complete: ${outputPath}"
+    } catch (Exception e) {
+        println "Error writing OME-TIFF: ${e.message}"
+    }
 }
 
-def write_ome_lzw(server, outputPath) {
-    def tilesize = 512
-    def outputDownsample = 1
-    def pyramidscaling = 2
+def writeOmePyramid(ImageServer server, String outputPath) {
+    // Configuration for OME Pyramid TIFF
+    def tileSize = 512
+    def minDownsample = 1
+    def pyramidScale = 2
     def nThreads = 2
-    def compression = OMEPyramidWriter.CompressionType.LZW  //ZLIB //UNCOMPRESSED //LZW  (not working with 32bit: //J2K_LOSSY //J2K)
+    def compression = OMEPyramidWriter.CompressionType.LZW  // Use LZW. Also  //ZLIB //UNCOMPRESSED (not working with 32bit: //J2K_LOSSY //J2K)
 
-    def outputPath2 = "second.ome.tif"
-    new OMEPyramidWriter.Builder(server)
-	.compression(compression)
-	.parallelize(nThreads)
-	.channelsInterleaved()     
-	.tileSize(tilesize)
-	.scaledDownsampling(outputDownsample, pyramidscaling)
-	.build()
-	.writePyramid(outputPath2)
-
-    println('Done:' + outputPath2)
+    try {
+        def writer = new OMEPyramidWriter.Builder(server)
+            .compression(compression)
+            .parallelize(nThreads)
+            .channelsInterleaved()
+            .tileSize(tileSize)
+            .scaledDownsampling(minDownsample, pyramidScale)
+            .build()
+        
+        writer.writePyramid(outputPath)
+        println "OME Pyramid TIFF written to: ${outputPath}"
+    } catch (Exception e) {
+        println "Error writing OME Pyramid TIFF: ${e.message}"
+    }
 }
 
-def inputFilename = args[0]
-def outputFilename =  make_output_filename(inputFilename)
-def series = args.size() > 1 ? args[1] : '0'
-
-println inputFilename
-println outputFilename
-println series
-
-outputFile = new File(outputFilename)
-if (outputFile.exists()) {
-    throw new IllegalArgumentException("File already exists: ${outputFile.absolutePath}")
+def checkFileExistence(String outputFilename) {
+    def outputFile = new File(outputFilename)
+    if (outputFile.exists()) {
+        throw new IllegalArgumentException("File already exists: ${outputFile.absolutePath}")
+    }
 }
-def server = buildServer(inputFilename, "--series", series)
-write_ome_jpeg(server, outputFilename)
+
+def buildImageServer(String inputFilename, String series) {
+    try {
+        return buildServer(inputFilename, "--series", series)
+    } catch (Exception e) {
+        throw new IllegalArgumentException("Error building image server: ${e.message}")
+    }
+}
+
+def convert(String[] args) {
+
+    if (args.size() < 1) {
+        throw new IllegalArgumentException("Input filename is required")
+    }
+
+    String inputFilename = args[0]
+    String outputFilename = makeOutputFilename(inputFilename)
+    String series = args.size() > 1 ? args[1] : '1' 
+
+    println "Input Filename: ${inputFilename}"
+    println "Output Filename: ${outputFilename}"
+    println "Series: ${series}"
+
+    // Ensure output file doesn't already exist
+    checkFileExistence(outputFilename)
+
+    // Build ImageServer for input file and series
+    def server = buildImageServer(inputFilename, series)
+
+    // Write image in desired format
+    writeOmeTiff(server, outputFilename)
+}
+
+// Execute the main function with provided arguments
+convert(args)
+
