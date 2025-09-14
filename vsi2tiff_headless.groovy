@@ -5,10 +5,11 @@ import qupath.lib.projects.ProjectIO
 import qupath.lib.images.writers.ome.OMETiffWriter
 import qupath.lib.images.writers.ome.OMEPyramidWriter
 
-// Converts VSI image to OME-TIFF format (pyramid, JPEG pending)
+// Convert VSI image to OME-TIFF format (pyramid, JPEG pending)
+//
 // Arguments:
 //  - param1: input VSI image path
-//  - param2: series number (optional, defaults to 0)
+//  - param2: series number (optional, defaults to 1)
 
 String makeOutputFilename(String inputPath) {
     if (!inputPath.endsWith('.vsi')) {
@@ -81,16 +82,14 @@ def convert(String[] args) {
     println "Output Filename: ${outputFilename}"
     println "Series: ${series}"
 
-    // Ensure output file doesn't already exist
     checkFileExistence(outputFilename)
 
-    // Build ImageServer for input file and series
     def server = buildImageServer(inputFilename, series)
 
-    // Write image in desired format
+    // Write image as OME TIFF Pyramid
     writeOmeTiff(server, outputFilename)
 }
 
-// Execute the main function with provided arguments
+// Run the main function, renamed to avoid collision
 convert(args)
 
