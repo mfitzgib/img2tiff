@@ -1,10 +1,9 @@
-ximport qupath.lib.images.ImageData
+import qupath.lib.images.ImageData
 import qupath.lib.images.servers.ImageServerBuilder
 import qupath.lib.projects.Project
 import qupath.lib.projects.ProjectIO
 import qupath.lib.images.writers.ome.OMETiffWriter
 import qupath.lib.images.writers.ome.OMEPyramidWriter
-
 
 String make_output_filename(String inputPath) {
     if (!inputPath.endsWith('.vsi')) {
