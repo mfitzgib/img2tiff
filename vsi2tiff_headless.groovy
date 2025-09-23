@@ -11,11 +11,12 @@ import qupath.lib.images.writers.ome.OMEPyramidWriter
 //  - param1: input VSI image path
 //  - param2: series number (optional, defaults to 1)
 
-String makeOutputFilename(String inputPath) {
+String makeOutputFilename(String outputFolder, String inputPath) {
     if (!inputPath.endsWith('.vsi')) {
         throw new IllegalArgumentException("Input must be a VSI image with .vsi suffix (received ${inputPath})")
     }
-    return inputPath.replaceFirst(/\.vsi$/, '.ome.tif')
+    def outputName = inputPath.replaceFirst(/.*\//, '').replaceFirst(/\.vsi$/, '.ome.tif')
+    return outputFolder.endsWith(File.separator) ? outputFolder + outputName : outputFolder + File.separator + outputName
 }
 
 def writeOmeTiff(ImageServer server, String outputPath) {
@@ -71,10 +72,12 @@ def convert(String[] args) {
     if (args.size() < 1) {
         throw new IllegalArgumentException("Input filename is required")
     }
+    println "Input Arguments: ${args}"
 
     String inputFilename = args[0]
-    String outputFilename = makeOutputFilename(inputFilename)
-    String series = args.size() > 1 ? args[1] : '1' 
+    String outputFolder = args[1]
+    String outputFilename = makeOutputFilename(outputFolder, inputFilename)
+    String series = args.size() > 2 ? args[2] : '1' 
 
     println "Input Filename: ${inputFilename}"
     println "Output Filename: ${outputFilename}"
