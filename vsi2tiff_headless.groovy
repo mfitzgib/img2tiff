@@ -6,16 +6,13 @@ import qupath.lib.images.writers.ome.OMETiffWriter
 import qupath.lib.images.writers.ome.OMEPyramidWriter
 
 // Convert VSI image to OME-TIFF pyramid
-//
-// Arguments:
-//  - param1: input VSI image path
-//  - param2: series number (optional, defaults to 1)
 
-String makeOutputFilename(String outputFolder, String inputPath) {
+String makeOutputPrefix(String outputFolder, String inputPath, String series, String name) {
     if (!inputPath.endsWith('.vsi')) {
         throw new IllegalArgumentException("Input must be a VSI image with .vsi suffix (received ${inputPath})")
     }
-    def outputName = inputPath.replaceFirst(/.*\//, '').replaceFirst(/\.vsi$/, '.ome.tif')
+    def suffix = !name.endsWith(".vsi") || name.contains(" - ") ? name.split(" - ")[1].replace(" ", "_") : series
+    def outputName = inputPath.replaceFirst(/.*\//, '').replaceFirst(/\.vsi$/, '.' + suffix)
     return outputFolder.endsWith(File.separator) ? outputFolder + outputName : outputFolder + File.separator + outputName
 }
 
@@ -76,16 +73,51 @@ def convert(String[] args) {
 
     String inputFilename = args[0]
     String outputFolder = args[1]
-    String outputFilename = makeOutputFilename(outputFolder, inputFilename)
-    String series = args.size() > 2 ? args[2] : '1' 
 
     println "Input Filename: ${inputFilename}"
-    println "Output Filename: ${outputFilename}"
-    println "Series: ${series}"
+    Boolean keep_going = true
 
-    checkFileExistence(outputFilename)
+    for (int s = 0; keep_going; s++) {
+        String series = s
+        try {
+            convertSeries(outputFolder, inputFilename, series)
+        } catch (IllegalArgumentException e) {
+            println "Stopping iteration"
+            keep_going = false
+        }
+    }
+
+}
+
+def saveMetadata(ImageServer server, String outputPrefix) {
+    def metadata = server.getMetadata()
+    def jsonFilename = outputPrefix + ".metadata.json"
+    def file = new File(jsonFilename)
+    file.withWriter { writer ->
+        writer.println(metadata)
+    }
+    println "Metadata saved to: ${jsonFilename}"
+}
+
+def convertSeries(String outputFolder, String inputFilename, String series) {
+
+    println "Converting series ${series}"
 
     def server = buildImageServer(inputFilename, series)
+
+    name = server.getMetadata()["name"]
+    String outputPrefix = makeOutputPrefix(outputFolder, inputFilename, series, name)
+
+    // Save the series metadata to JSON
+    saveMetadata(server, outputPrefix)
+
+    def outputFilename = outputPrefix + ".ome.tif"
+
+    println "Writing to ${outputFilename}"
+
+    // Include the series number in the output file name
+    checkFileExistence(outputFilename)
+    println "Output Filename: ${outputFilename}"
 
     // Write image as OME TIFF Pyramid
     writeOmeTiff(server, outputFilename)

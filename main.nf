@@ -13,6 +13,7 @@ process convert_vsi {
     output:
         path "*.ome.tif"
         path "*.log.txt"
+        path "*.metadata.json"
 
     script:
         """#!/bin/bash
