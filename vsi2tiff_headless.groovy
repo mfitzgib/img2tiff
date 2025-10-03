@@ -28,19 +28,18 @@ def writeOmeTiff(ImageServer server, String outputPath) {
     }
 }
 
-def writeOmePyramid(ImageServer server, String outputPath) {
-    // Configuration for OME Pyramid TIFF
-    def tileSize = 512
+def writeOmePyramid(ImageServer server, String outputPath, OMEPyramidWriter.CompressionType compression) {
+
+    def tileSize = 1024
     def nThreads = 2
-    def compression = OMEPyramidWriter.CompressionType.LZW  // Use LZW. Also  //ZLIB //UNCOMPRESSED (not working with 32bit: //J2K_LOSSY //J2K)
 
     try {
         def writer = new OMEPyramidWriter.Builder(server)
-            .compression(compression)
-            .parallelize(nThreads)
-            .channelsInterleaved()
             .tileSize(tileSize)
-            .downsamples(1.0, 2.0, 4.0, 8.0)
+            .channelsInterleaved()
+            .compression(compression)
+	    .dyadicDownsampling()
+            .parallelize(nThreads)
             .build()
         writer.writePyramid(outputPath)
         println "OME Pyramid TIFF written to: ${outputPath}"
@@ -66,27 +65,48 @@ def buildImageServer(String inputFilename, String series) {
 
 def convert(String[] args) {
 
+    // Default to lossy (Could be ZLIB LZW UNCOMPRESSED JPEG (not working with 32bit: J2K_LOSSY J2K)
+    def compression = OMEPyramidWriter.CompressionType.JPEG
+
+    println "Input Arguments: ${args}"
+
     if (args.size() < 1) {
         throw new IllegalArgumentException("Input filename is required")
     }
-    println "Input Arguments: ${args}"
-
     String inputFilename = args[0]
+
+    if (args.size() < 2) {
+        throw new IllegalArgumentException("Output folder name is required")
+    }
     String outputFolder = args[1]
 
+    if (args.size() >= 3) {
+	switch(args[2]) {
+	case "JPEG":
+	compression = OMEPyramidWriter.CompressionType.JPEG
+	break
+	case "ZLIB":
+	compression = OMEPyramidWriter.CompressionType.ZLIB
+	break
+	default:
+        throw new IllegalArgumentException("Compression must be either JPEG or ZLIB")
+	}
+    }
+
     println "Input Filename: ${inputFilename}"
+    println "Output Folder: ${outputFolder}"
+
     Boolean keep_going = true
 
     for (int s = 0; keep_going; s++) {
         String series = s
         try {
-            convertSeries(outputFolder, inputFilename, series)
+            convertSeries(outputFolder, inputFilename, series, compression)
         } catch (IllegalArgumentException e) {
             println "Stopping iteration"
             keep_going = false
         }
     }
-
 }
 
 def saveMetadata(ImageServer server, String outputPrefix) {
@@ -99,7 +119,7 @@ def saveMetadata(ImageServer server, String outputPrefix) {
     println "Metadata saved to: ${jsonFilename}"
 }
 
-def convertSeries(String outputFolder, String inputFilename, String series) {
+def convertSeries(String outputFolder, String inputFilename, String series, OMEPyramidWriter.CompressionType compression) {
 
     println "Converting series ${series}"
 
@@ -120,9 +140,8 @@ def convertSeries(String outputFolder, String inputFilename, String series) {
     println "Output Filename: ${outputFilename}"
 
     // Write image as OME TIFF Pyramid
-    writeOmeTiff(server, outputFilename)
+    writeOmePyramid(server, outputFilename, compression)
 }
 
 // Run the main function, renamed to avoid collision
 convert(args)
-
