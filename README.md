@@ -1,10 +1,26 @@
-## vsi2tiff
-Notes on working with Olympus VS200 .vsi images,
+## img2tiff
 
-### vsi2tiff_headless.groovy
-Convert VSI image to OME-TIFF format (pyramid, JPEG pending).
+Convert image to OME-TIFF format (pyramid, JPEG pending).
 Tested on QuPath 0.6.0 under macOS, both arm64 and x86 emulated,
 in headless mode.
+
+
+## Nextflow Workflow
+
+Parameters:
+  - input_folder: URI to folder which contains the images to convert
+  - image_format: File suffix for images which will be converted
+  - output: Folder where results will be published
+  - container: Docker container used to run QuPath (default: 'public.ecr.aws/cirrobio/qupath:0046339')
+
+Behavior:
+Any file within `input_folder` which has the `image_format` suffix will be provided
+as an input to the `vsi2tiff_headless.groovy` script within QuPath.
+Every independent series within each image will be written out as a separate
+OME-TIFF file.
+
+
+## Standalone Script: vsi2tiff_headless.groovy
 
 Arguments:
   - param1: input VSI image path
