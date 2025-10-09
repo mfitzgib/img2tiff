@@ -29,7 +29,7 @@ echo "\$(date) Done"
 }
 
 workflow {
-    script = file("$projectDir/vsi2tiff_headless.groovy", checkIfExists: true)
+    script = file("$projectDir/img2tiff_headless.groovy", checkIfExists: true)
     input_folder = file(params.input_folder, type: 'dir', checkIfExists: true)
     convert_images(input_folder, script)
 }

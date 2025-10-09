@@ -15,15 +15,15 @@ Parameters:
 
 Behavior:
 Any file within `input_folder` which has the `image_format` suffix will be provided
-as an input to the `vsi2tiff_headless.groovy` script within QuPath.
+as an input to the `img2tiff_headless.groovy` script within QuPath.
 Every independent series within each image will be written out as a separate
 OME-TIFF file.
 
 
-## Standalone Script: vsi2tiff_headless.groovy
+## Standalone Script: img2tiff_headless.groovy
 
 Arguments:
-  - param1: input VSI image path
+  - param1: input image path
   - param2: series number (optional, defaults to 1)
 
 The H&amp;E images we work with have at least four series:
