@@ -106,6 +106,10 @@ def convert(String[] args) {
             println "Stopping iteration"
             keep_going = false
         }
+        // Do not create more than 10 series per image
+        if (s == 10) {
+            keep_going = false
+        }
     }
 }
 
