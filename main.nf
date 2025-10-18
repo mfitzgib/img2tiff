@@ -13,16 +13,25 @@ process convert_images {
     output:
         path "*.ome.tif"
         path "*.log.txt"
-        path "*.metadata.json"
 
     script:
         """#!/bin/bash
 set -e
 
 for IMG_FILE in inputs/*.${params.image_format}; do
-    echo "\$(date) Converting \$IMG_FILE"
-    LOG_TXT="\${IMG_FILE#inputs/}.log.txt"
-    QuPath script --args \$IMG_FILE --args "\$PWD" "${script}" | tee "\$LOG_TXT"
+    OUTPUT_PREFIX=\${IMG_FILE##*/}
+    OUTPUT_PREFIX=\${OUTPUT_PREFIX%.${params.image_format}}
+    echo "\$(date) Converting \$IMG_FILE (Output Prefix: \$OUTPUT_PREFIX)"
+    LOG_TXT="\${OUTPUT_PREFIX}.log.txt"
+    QuPath convert-ome \
+             \$IMG_FILE \
+             \$OUTPUT_PREFIX \
+             --pyramid-scale=2 \
+             --tile-size=1024 \
+             --compression=ZLIB \
+             --parallelize | tee "\$LOG_TXT"
+
+    # QuPath script --args \$IMG_FILE --args "\$PWD" "${script}" | tee "\$LOG_TXT"
 done
 echo "\$(date) Done"
         """
