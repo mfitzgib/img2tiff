@@ -5,14 +5,21 @@ import qupath.lib.projects.ProjectIO
 import qupath.lib.images.writers.ome.OMETiffWriter
 import qupath.lib.images.writers.ome.OMEPyramidWriter
 
-// Convert VSI image to OME-TIFF pyramid
+// Convert image to OME-TIFF pyramid
 
-String makeOutputPrefix(String outputFolder, String inputPath, String series, String name) {
-    if (!inputPath.endsWith('.vsi')) {
-        throw new IllegalArgumentException("Input must be a VSI image with .vsi suffix (received ${inputPath})")
+String makeOutputPrefix(
+    String outputFolder,
+    String inputPath,
+    String file_ext,
+    String series,
+    String name
+) {
+    if (!inputPath.endsWith(".${file_ext}")) {
+        println "Input must be a image with .${file_ext} suffix (received ${inputPath})"
+        throw new IllegalArgumentException("Input must be a image with .${file_ext} suffix (received ${inputPath})")
     }
-    def suffix = !name.endsWith(".vsi") || name.contains(" - ") ? name.split(" - ")[1].replace(" ", "_") : series
-    def outputName = inputPath.replaceFirst(/.*\//, '').replaceFirst(/\.vsi$/, '.' + suffix)
+    def suffix = !name.endsWith(".${file_ext}") || name.contains(" - ") ? name.split(" - ")[1].replace(" ", "_") : series
+    def outputName = inputPath.replaceFirst(/.*\//, '').replaceFirst(/\.${file_ext}$/, '.' + suffix)
     return outputFolder.endsWith(File.separator) ? outputFolder + outputName : outputFolder + File.separator + outputName
 }
 
@@ -93,7 +100,15 @@ def convert(String[] args) {
 	}
     }
 
+    // The user may optionally specify the file extension (e.g. vsi, svs, scn)
+    if (args.size() >= 4) {
+        file_ext = args[3]
+    } else {
+        file_ext = "vsi"
+    }
+
     println "Input Filename: ${inputFilename}"
+    println "File extension: ${file_ext}"
     println "Output Folder: ${outputFolder}"
 
     Boolean keep_going = true
@@ -101,9 +116,13 @@ def convert(String[] args) {
     for (int s = 0; keep_going; s++) {
         String series = s
         try {
-            convertSeries(outputFolder, inputFilename, series, compression)
+            convertSeries(outputFolder, inputFilename, file_ext, series, compression)
         } catch (IllegalArgumentException e) {
             println "Stopping iteration"
+            keep_going = false
+        }
+        // Do not create more than 10 series per image
+        if (s == 10) {
             keep_going = false
         }
     }
@@ -119,14 +138,22 @@ def saveMetadata(ImageServer server, String outputPrefix) {
     println "Metadata saved to: ${jsonFilename}"
 }
 
-def convertSeries(String outputFolder, String inputFilename, String series, OMEPyramidWriter.CompressionType compression) {
+def convertSeries(
+    String outputFolder,
+    String inputFilename,
+    String file_ext,
+    String series,
+    OMEPyramidWriter.CompressionType compression
+) {
 
     println "Converting series ${series}"
 
     def server = buildImageServer(inputFilename, series)
 
     name = server.getMetadata()["name"]
-    String outputPrefix = makeOutputPrefix(outputFolder, inputFilename, series, name)
+    println "Series name: ${name}"
+    String outputPrefix = makeOutputPrefix(outputFolder, inputFilename, file_ext, series, name)
+    println "Output prefix: ${outputPrefix}"
 
     // Save the series metadata to JSON
     saveMetadata(server, outputPrefix)
