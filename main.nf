@@ -71,7 +71,7 @@ echo "\$(date) Done"
 workflow {
     script = file("$projectDir/img2tiff_headless.groovy", checkIfExists: true)
     input_folder = file(params.input_folder, type: 'dir', checkIfExists: true)
-    if ( params.image_format in ['vsi', 'scn', 'dcm', 'dicom', 'nd2', 'lif'] ){
+    if ( params.image_format in ['vsi', 'scn', 'dcm', 'dicom', 'nd2', 'lif', 'czi'] ){
         convert_image_series(input_folder, script)
     } else {
         convert_image(input_folder, script)
