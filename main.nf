@@ -22,7 +22,12 @@ set -e
 for IMG_FILE in inputs/*.${params.image_format}; do
     echo "\$(date) Converting \$IMG_FILE"
     LOG_TXT="\${IMG_FILE#inputs/}.log.txt"
-    QuPath script --args \$IMG_FILE --args "\$PWD" "${script}" | tee "\$LOG_TXT"
+    QuPath script \
+        --args \$IMG_FILE \
+        --args "\$PWD" \
+        --args "${params.compression}" \
+        --args "${params.image_format}" \
+        "${script}" | tee "\$LOG_TXT"
 done
 echo "\$(date) Done"
         """

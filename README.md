@@ -23,7 +23,7 @@ OME-TIFF file.
 ## Standalone Script: img2tiff_headless.groovy
 
 Arguments:
-  - param1: input VSI image path
+  - param1: input image path
   - param2: series number (optional, defaults to 1)
 
 The H&amp;E images we work with have at least four series:
